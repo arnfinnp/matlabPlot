@@ -1,2 +1,2 @@
-plot_matlab
+matlabPlot
 ===========
