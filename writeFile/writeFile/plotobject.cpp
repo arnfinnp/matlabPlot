@@ -1,12 +1,13 @@
 #include <plotobject.h>
 
 
-Matlab::PlotObject::PlotObject(const std::string& name)
-   : name_(name)
+Matlab::PlotObject::PlotObject()
+   : nameX_("x")
+   , nameY_("y")
    , color_("-k")
    , lineWidth_("'LineWidth',1")
+   , legend_("")
 {
-   init();
 }
 
 
@@ -48,18 +49,13 @@ Matlab::PlotObject::setColor(const Color& color)
       case white:
          newColor.append("-w");
          break;
+      case random:
+         newColor.append("'Color'',[rand,rand,rand]");
+         break;
       default:
          newColor.append("-k");
    }
 
-   std::string plotStr = os_.str();
-   plotStr.replace(plotStr.find(color_),2,newColor);
-
-   std::ostringstream os;
-   os << plotStr;
-
-   os_.clear();
-   os_ << os.str();
    color_.clear();
    color_.append(newColor);
 }
@@ -69,7 +65,8 @@ Matlab::PlotObject::setColor(const Color& color)
 void
 Matlab::PlotObject::setLegend(const std::string& legend)
 {
-   legend_.push_back(legend);
+   legend_.clear();
+   legend_.append(legend);
 }
 
 
@@ -77,35 +74,134 @@ Matlab::PlotObject::setLegend(const std::string& legend)
 void
 Matlab::PlotObject::setlineWidth(const int& lineWidth)
 {
-   std::ostringstream osLW;
-   osLW << lineWidth;
-   std::string plotStr = os_.str();
-   plotStr.replace(plotStr.find("LineWidth")+11,1,osLW.str());
-
+   lineWidth_.clear();
    std::ostringstream os;
-   os << plotStr;
-
-   os_.clear();
-   os_ << os.str();
+   os << "'LineWidth'," << lineWidth;
+   lineWidth_.append(os.str());
 }
 
 
 
-void
-Matlab::PlotObject::init()
+std::string
+Matlab::PlotObject::getLegend()
 {
-   os_ << "plot(" << name_ << "_vec"
-       << "," << color_
-       << "," << lineWidth_
-       << ")";
+   return legend_;
+}
+
+
+
+std::string
+Matlab::PlotObject::getPlotString()
+{
+   std::ostringstream os;
+   init(os);
+   return os.str();
+}
+
+
+
+std::vector<double>
+Matlab::PlotObject::getXVector()
+{
+   if (vectorX_.size() == 0 &&
+       vectorY_.size() > 0)
+   {
+      for (std::size_t i = 0; i < vectorY_.size(); ++i)
+      {
+         vectorX_.push_back(static_cast<double>(i));
+      }
+   }
+
+   return vectorX_;
+}
+
+
+
+std::vector<double>
+Matlab::PlotObject::getYVector()
+{
+   if (vectorX_.size() > 0 &&
+       vectorY_.size() == 0)
+   {
+      for (std::size_t i = 0; i < vectorX_.size(); ++i)
+      {
+         vectorY_.push_back(static_cast<double>(i));
+      }
+   }
+
+   return vectorY_;
+}
+
+
+
+void
+Matlab::PlotObject::init(std::ostringstream& os)
+{
+   if (vectorX_.size() > 0 &&
+       vectorY_.size() == 0)
+   {
+      os << "plot("
+          << nameX_     << "_vec,"
+          << color_     << ","
+          << lineWidth_ << ","
+          << ")";
+   }
+   else
+      if (vectorX_.size() == 0 &&
+          vectorY_.size() > 0)
+      {
+         os << "plot("
+             << nameY_     << "_vec,"
+             << color_     << ","
+             << lineWidth_ << ","
+             << ")";
+      }
+      else
+      {
+         os << "plot("
+             << nameX_     << "_vec,"
+             << nameY_     << "_vec,"
+             << color_     << ","
+             << lineWidth_ << ","
+             << ")";
+      }
+
 }
 
 void
-Matlab::PlotObject::setVector(const std::vector<double> & vec)
+Matlab::PlotObject::setVector(const std::vector<double> & vec,
+                              const Axis& axis)
 {
    std::vector<double>::const_iterator vecIterator;
    for (vecIterator = vec.begin(); vecIterator != vec.end(); ++vecIterator)
    {
-       vector_.push_back(*vecIterator);
+      if (axis == Axis::x)
+      {
+         vectorX_.push_back(*vecIterator);
+      }
+      else
+         if (axis == Axis::y)
+         {
+            vectorY_.push_back(*vecIterator);
+         }
    }
+}
+
+
+
+void
+Matlab::PlotObject::setVectorName(const std::string& name,
+                                  const Axis& axis)
+{
+   if (axis == Axis::x)
+   {
+      nameX_.clear();
+      nameX_.append(name);
+   }
+   else
+      if (axis == Axis::y)
+      {
+         nameY_.clear();
+         nameY_.append(name);
+      }
 }

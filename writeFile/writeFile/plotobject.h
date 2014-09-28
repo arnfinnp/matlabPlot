@@ -3,11 +3,13 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include <armadillo>
 
 namespace Matlab
 {
+   typedef std::vector<double> Vec;
    enum Color
    {
       blue,
@@ -18,39 +20,56 @@ namespace Matlab
       yellow,
       black,
       white,
-      First = blue,
-      Last = white
+      random
+   };
+
+   enum Axis
+   {
+      x,
+      y
    };
 
    class PlotObject
    {
    public:
-      PlotObject(const std::string&);
+      PlotObject();
       ~PlotObject();
 
       template <typename Type>
-      void addVector(const std::vector<Type>&);
+      void addVector(const std::vector<Type>&, const Axis&);
       template <typename Type>
-      void addVector(const arma::Col<Type>& vec);
+      void addVector(const std::vector<Type>&, const Axis&, const std::string&);
       template <typename Type>
-      void addVector(const arma::Row<Type>& vec);
+      void addVector(const arma::Col<Type>& vec, const Axis&);
+      template <typename Type>
+      void addVector(const arma::Col<Type>& vec, const Axis&, const std::string&);
+      template <typename Type>
+      void addVector(const arma::Row<Type>& vec, const Axis&);
+      template <typename Type>
+      void addVector(const arma::Row<Type>& vec, const Axis&, const std::string&);
+
 
       void setColor(const Color&);
       void setLegend(const std::string&);
       void setlineWidth(const int&);
 
-   protected:
-      void init();
-      void setVector(const std::vector<double>&);
-   private:
-//      typedef boost::optional<std::string> Option;
-      std::string              name_;
-      std::string              color_;
-      std::string              lineWidth_;
-      std::vector<std::string> legend_;
-      std::vector<double>      vector_;
+      std::string         getLegend();
+      std::string         getPlotString();
+      std::vector<double> getXVector();
+      std::vector<double> getYVector();
 
-      std::ostringstream os_;
+   protected:
+      void init(std::ostringstream& os);
+      void setVector(const std::vector<double>&, const Axis&);
+      void setVectorName(const std::string&, const Axis&);
+   private:
+      std::string         nameX_;
+      std::string         nameY_;
+      std::string         color_;
+      std::string         lineWidth_;
+      std::string         legend_;
+      std::vector<double> vectorX_;
+      std::vector<double> vectorY_;
    };
 }
 
