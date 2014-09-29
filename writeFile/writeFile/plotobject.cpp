@@ -4,9 +4,11 @@
 Matlab::PlotObject::PlotObject()
    : nameX_("x")
    , nameY_("y")
-   , color_("-k")
+   , xLabel_("x")
+   , yLabel_("y")
+   , color_("'-k'")
    , lineWidth_("'LineWidth',1")
-   , legend_("")
+   , legend_("xy")
 {
 }
 
@@ -19,6 +21,24 @@ Matlab::PlotObject::~PlotObject()
 
 
 void
+Matlab::PlotObject::setAxisLabel(const std::string& labelName,
+                                 const Axis &       axis)
+{
+   if (axis == Axis::x)
+   {
+      xLabel_.clear();
+      xLabel_.append(labelName);
+   }
+   else
+      if (axis == Axis::y)
+      {
+         yLabel_.clear();
+         yLabel_.append(labelName);
+      }
+}
+
+
+void
 Matlab::PlotObject::setColor(const Color& color)
 {
    std::string newColor;
@@ -26,34 +46,34 @@ Matlab::PlotObject::setColor(const Color& color)
    switch(color)
    {
       case blue:
-         newColor.append("-b");
+         newColor.append("'-b'");
          break;
       case green:
-         newColor.append("-g");
+         newColor.append("'-g'");
          break;
       case red:
-         newColor.append("-r");
+         newColor.append("'-r'");
          break;
       case cyan:
-         newColor.append("-c");
+         newColor.append("'-c'");
          break;
       case magenta:
-         newColor.append("-m");
+         newColor.append("'-m'");
          break;
       case yellow:
-         newColor.append("-y");
+         newColor.append("'-y'");
          break;
       case black:
-         newColor.append("-k");
+         newColor.append("'-k'");
          break;
       case white:
-         newColor.append("-w");
+         newColor.append("'-w'");
          break;
       case random:
-         newColor.append("'Color'',[rand,rand,rand]");
+         newColor.append("'Color',[rand,rand,rand]");
          break;
       default:
-         newColor.append("-k");
+         newColor.append("'-k'");
    }
 
    color_.clear();
@@ -91,6 +111,22 @@ Matlab::PlotObject::getLegend()
 
 
 std::string
+Matlab::PlotObject::getLabel(const Axis& axis)
+{
+   if (axis == Axis::x)
+   {
+      return xLabel_;
+   }
+   else
+      if (axis == Axis::y)
+      {
+         return yLabel_;
+      }
+}
+
+
+
+std::string
 Matlab::PlotObject::getPlotString()
 {
    std::ostringstream os;
@@ -101,35 +137,51 @@ Matlab::PlotObject::getPlotString()
 
 
 std::vector<double>
-Matlab::PlotObject::getXVector()
+Matlab::PlotObject::getVector(const Axis& axis)
 {
-   if (vectorX_.size() == 0 &&
-       vectorY_.size() > 0)
+   if (axis == Axis::x)
    {
-      for (std::size_t i = 0; i < vectorY_.size(); ++i)
+      if (vectorX_.size() == 0 &&
+          vectorY_.size() > 0)
       {
-         vectorX_.push_back(static_cast<double>(i));
+         for (std::size_t i = 0; i < vectorY_.size(); ++i)
+         {
+            vectorX_.push_back(static_cast<double>(i));
+         }
       }
-   }
 
-   return vectorX_;
+      return vectorX_;
+   }
+   else
+      if (axis == Axis::y)
+      {
+         if (vectorX_.size() > 0 &&
+             vectorY_.size() == 0)
+         {
+            for (std::size_t i = 0; i < vectorX_.size(); ++i)
+            {
+               vectorY_.push_back(static_cast<double>(i));
+            }
+         }
+
+         return vectorY_;
+      }
 }
 
 
 
-std::vector<double>
-Matlab::PlotObject::getYVector()
+std::string
+Matlab::PlotObject::getVectorName(const Axis& axis)
 {
-   if (vectorX_.size() > 0 &&
-       vectorY_.size() == 0)
+   if (axis == Axis::x)
    {
-      for (std::size_t i = 0; i < vectorX_.size(); ++i)
-      {
-         vectorY_.push_back(static_cast<double>(i));
-      }
+      return nameX_;
    }
-
-   return vectorY_;
+   else
+      if (axis == Axis::y)
+      {
+         return nameY_;
+      }
 }
 
 
@@ -143,7 +195,7 @@ Matlab::PlotObject::init(std::ostringstream& os)
       os << "plot("
           << nameX_     << "_vec,"
           << color_     << ","
-          << lineWidth_ << ","
+          << lineWidth_
           << ")";
    }
    else
@@ -153,7 +205,7 @@ Matlab::PlotObject::init(std::ostringstream& os)
          os << "plot("
              << nameY_     << "_vec,"
              << color_     << ","
-             << lineWidth_ << ","
+             << lineWidth_
              << ")";
       }
       else
@@ -162,7 +214,7 @@ Matlab::PlotObject::init(std::ostringstream& os)
              << nameX_     << "_vec,"
              << nameY_     << "_vec,"
              << color_     << ","
-             << lineWidth_ << ","
+             << lineWidth_
              << ")";
       }
 

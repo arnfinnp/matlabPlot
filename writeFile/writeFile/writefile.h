@@ -2,46 +2,48 @@
 #define WRITEFILE_H
 
 #include <armadillo>
+#include <map>
 #include <string>
+#include <sstream>
+#include <utility>
 #include <vector>
+
+#include <plotobject.h>
 
 namespace Matlab
 {
    class WriteFile
    {
    public:
-      WriteFile(const std::string& filename);
+      WriteFile(const std::string& filename,
+                bool               save = false);
       ~WriteFile();
 
-      void setLineWidth(const int&);
-      void addLegend(const std::string&);
-      void addAxisLabel(const std::string& xLabel,
-                        const std::string& yLabel);
+      void addPlotObject(const PlotObject& object,
+                         uint              figure);
+      void setTitle(const std::string& title,
+                    const uint&        figure);
       void createFile();
 
-      template <typename Type>
-      void addArmaCol(const arma::Col<Type>&);
-      template <typename Type>
-      void addArmaRow(const arma::Row<Type>&);
-      template <typename Type>
-      void addVector(const std::vector<Type>&);
-
    protected:
+      void createFigure(const uint&         figure,
+                        std::ostringstream& os);
+      void createFile(const std::string& fileName,
+                      const std::string& content);
+      std::vector<uint> findFigureNumbers();
       void setVector(const std::vector<double>& );
-      void writeToFile(const std::string&         fileName,
-                       const std::vector<double>& vector);
-
+      void writeToFile(std::ostringstream& vectors,
+                       PlotObject&   object);
    private:
-      typedef std::vector<std::vector<double> > Vectors;
-      Vectors     vectors_;
-      const std::string fileName_;
-
-      const std::string legend_;
-      const std::string xLabel_;
-      const std::string yLabel_;
+      typedef std::pair<PlotObject, uint>  Figure;
+      typedef std::vector<Figure>          Figures;
+      typedef std::pair<std::string, uint> Title;
+      typedef std::vector<Title>           Titles;
+      Figures     figures_;
+      Titles      titles_;
+      std::string fileName_;
+      bool        save_;
    };
 }
-
-#include <writefile.tpp>
 
 #endif // WRITEFILE_H

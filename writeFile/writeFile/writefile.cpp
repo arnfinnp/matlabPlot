@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -6,19 +7,11 @@
 #include <writefile.h>
 
 
-namespace
-{
-   namespace Local
-   {
-      std::string getFilename(const int&         idx,
-                              const std::string& fileName);
-      std::string getName(const std::string& fileName);
-   }
-}
 
-
-Matlab::WriteFile::WriteFile(const std::string& filename)
+Matlab::WriteFile::WriteFile(const std::string& filename,
+                             bool               save)
    : fileName_(filename.c_str())
+   , save_(save)
 {
 }
 
@@ -31,88 +24,171 @@ Matlab::WriteFile::~WriteFile()
 
 
 void
+Matlab::WriteFile::addPlotObject(const PlotObject& object,
+                                 uint              figure)
+{
+   figures_.push_back(std::make_pair(object, figure));
+}
+
+
+
+void
+Matlab::WriteFile::setTitle(const std::string& title,
+                            const uint&        figure)
+{
+   titles_.push_back(std::make_pair(title, figure));
+}
+
+
+
+void
 Matlab::WriteFile::createFile()
 {
    std::ostringstream os;
-   os << "plot_"
-      << fileName_
-      << ".m";
+   const std::vector<uint> figureNumbers = findFigureNumbers();
+   std::cout << __LINE__ << "\n";
 
-   std::ofstream printFile(os.str().c_str());
-
-   Vectors::const_iterator vectors;
-   int idx = 0;
-   for (vectors = vectors_.begin(); vectors != vectors_.end(); ++vectors)
+   for (std::size_t i = 0; i < figureNumbers.size(); ++i)
    {
-      std::string fileName = Local::getFilename(idx, fileName_);
-      writeToFile(fileName, *vectors);
-      printFile << Local::getName(fileName) << "\n";
-      ++idx;
+      std::cout << __LINE__ << "\n";
+      createFigure(figureNumbers[i], os);
+   }
+   std::ostringstream fileName;
+   fileName << fileName_ << ".m";
+   createFile(fileName.str(), os.str());
+}
+
+
+
+std::vector<uint>
+Matlab::WriteFile::findFigureNumbers()
+{
+   std::vector<uint> figureNumbers;
+   std::cout << figures_.size() << std::endl;
+   for (std::size_t i = 0; i < figures_.size(); ++i)
+   {
+//      uint counter = 0;
+      const uint figureNumber = figures_[i].second;
+      if (std::find(figureNumbers.begin(), figureNumbers.end(), figureNumber) == figureNumbers.end())
+         figureNumbers.push_back(figureNumber);
+
+//      for (std::size_t j = 0; j < figureNumbers.size(); ++j)
+//      {
+//         if (figureNumber == figureNumbers[j])
+//         {
+//            ++counter;
+//         }
+//      }
+//      if (counter == 0)
+//      {
+//         figureNumbers.push_back(figureNumber);
+//      }
    }
 
-   printFile << "\nh = figure(1)\n";
-   for (int iPlots = 0; iPlots < idx; ++iPlots)
+   return figureNumbers;
+}
+
+
+
+void
+Matlab::WriteFile::createFigure(const uint&         figure,
+                                std::ostringstream& os)
+{
+   std::vector<PlotObject> plotObject;
+   std::ostringstream fileName;
+   std::ostringstream vectors;
+   std::ostringstream legend;
+
+   for (std::size_t i = 0; i < figures_.size(); ++i)
    {
-      std::string name = Local::getName(Local::getFilename(iPlots, fileName_));
-      printFile << "plot(" << name << "_vec" << ")\n"
-                << "hold on;\n";
-      std::cout << name << std::endl;
+      const uint figureNumber = figures_[i].second;
+      if (figureNumber == figure)
+      {
+         PlotObject object = figures_[i].first;
+         writeToFile(vectors, object);
+         plotObject.push_back(object);
+      }
    }
 
-   printFile << "hold off;";
+   fileName << fileName_
+            << "_figure_" << figure
+            << "_" << plotObject[0].getLabel(Matlab::x)
+            << "_" << plotObject[0].getLabel(Matlab::y);
+
+   os << fileName.str()  << "\n"
+      << "figure(" << figure << ")\n"
+      << plotObject[0].getPlotString() << "\n";
+   legend << "legend('"
+          << plotObject[0].getLegend()
+          << "'";
+   for (std::size_t i = 1; i < plotObject.size(); ++i)
+   {
+      os << "hold on"                     << "\n"
+         << plotObject[i].getPlotString() << "\n";
+      legend << ",'" << plotObject[i].getLegend() << "'";
+   }
+
+   legend << ")";
+   os << "xlabel('" << plotObject[0].getLabel(Matlab::x) << "')\n"
+      << "ylabel('" << plotObject[0].getLabel(Matlab::y) << "')\n";
+   os << legend.str() << "\n";
+
+   if (save_)
+   {
+      os << "print('"
+         << fileName.str()
+         << "', '-dpng', '-r300')";
+   }
+   os << "\n\n";
+   fileName << ".m";
+
+   createFile(fileName.str(), vectors.str());
+}
+
+
+
+void
+Matlab::WriteFile::createFile(const std::string& fileName,
+                              const std::string& content)
+{
+   std::ofstream printFile(fileName.c_str());
+   printFile << content;
    printFile.close();
 }
 
 
 
 void
-Matlab::WriteFile::setVector(const std::vector<double>& vec)
+Matlab::WriteFile::writeToFile(std::ostringstream& vectors,
+                               PlotObject&         object)
 {
-   vectors_.push_back(vec);
-}
-
-
-
-void
-Matlab::WriteFile::writeToFile(const std::string&         fileName,
-                               const std::vector<double>& vec)
-{
-   std::ofstream outputFile(fileName.c_str());
-
-   outputFile << Local::getName(fileName) << "_vec"
-              << " ="
-              << "\n[";
-
-   std::vector<double>::const_iterator vector;
-   for(vector = vec.begin(); vector != vec.end(); ++vector)
    {
-      outputFile << "\n" << *vector;
+      // x-axis
+      std::vector<double> vectorX = object.getVector(Matlab::x);
+      vectors << object.getVectorName(Matlab::x) << "_vec"
+              << " = [";
+
+      std::vector<double>::const_iterator vector;
+      for(vector = vectorX.begin(); vector != vectorX.end(); ++vector)
+      {
+         vectors << "\n" << *vector;
+      }
+
+      vectors << "\n]\n\n";
    }
 
-   outputFile << "\n]";
-}
+   {
+      // y-axis
+      std::vector<double> vectorY = object.getVector(Matlab::y);
+      vectors << object.getVectorName(Matlab::y) << "_vec"
+              << " = [";
 
+      std::vector<double>::const_iterator vector;
+      for(vector = vectorY.begin(); vector != vectorY.end(); ++vector)
+      {
+         vectors << "\n" << *vector;
+      }
 
-
-std::string
-Local::getFilename(const int&         idx,
-                   const std::string& fileName)
-{
-   std::ostringstream os;
-   os << fileName
-      << std::setfill('0') << std::setw(3) << idx
-      << ".m";
-
-   return os.str();
-}
-
-
-
-std::string
-Local::getName(const std::string& fileName)
-{
-   std::string name = fileName;
-   name.erase(name.end()-2,name.end());
-
-   return name;
+      vectors << "\n]\n\n";
+   }
 }

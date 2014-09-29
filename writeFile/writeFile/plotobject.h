@@ -1,6 +1,7 @@
 #ifndef PLOTOBJECT_H
 #define PLOTOBJECT_H
 
+#include <utility>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -48,15 +49,16 @@ namespace Matlab
       template <typename Type>
       void addVector(const arma::Row<Type>& vec, const Axis&, const std::string&);
 
-
+      void setAxisLabel(const std::string&, const Axis&);
       void setColor(const Color&);
       void setLegend(const std::string&);
       void setlineWidth(const int&);
 
       std::string         getLegend();
+      std::string         getLabel(const Axis&);
       std::string         getPlotString();
-      std::vector<double> getXVector();
-      std::vector<double> getYVector();
+      std::vector<double> getVector(const Axis&);
+      std::string         getVectorName(const Axis&);
 
    protected:
       void init(std::ostringstream& os);
@@ -65,6 +67,8 @@ namespace Matlab
    private:
       std::string         nameX_;
       std::string         nameY_;
+      std::string         xLabel_;
+      std::string         yLabel_;
       std::string         color_;
       std::string         lineWidth_;
       std::string         legend_;

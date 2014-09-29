@@ -257,12 +257,12 @@ compiler_clean:
 
 main.o: ../writeFile/main.cpp ../writeFile/plotobject.h \
 		../writeFile/plotobject.tpp \
-		../writeFile/writefile.h \
-		../writeFile/writefile.tpp
+		../writeFile/writefile.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../writeFile/main.cpp
 
 writefile.o: ../writeFile/writefile.cpp ../writeFile/writefile.h \
-		../writeFile/writefile.tpp
+		../writeFile/plotobject.h \
+		../writeFile/plotobject.tpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o writefile.o ../writeFile/writefile.cpp
 
 plotobject.o: ../writeFile/plotobject.cpp ../writeFile/plotobject.h \

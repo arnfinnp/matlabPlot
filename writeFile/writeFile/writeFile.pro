@@ -1,6 +1,5 @@
 HEADERS += \
     writefile.h    \
-    writefile.tpp  \
     plotobject.h \
     plotobject.tpp
 
